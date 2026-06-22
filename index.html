@@ -9,7 +9,7 @@
         :root {
             --primary: #198754;
             --secondary: #0d6efd;
-            --bg-color: #fdfcf0;
+            --bg-color: #fdfcf0; /* Screenshot background color */
             --text-color: #333;
         }
 
@@ -26,42 +26,28 @@
         .school-header h2 { color: var(--secondary); font-size: 1.5rem; }
         .school-header p { color: #666; font-size: 0.9rem; }
 
-        .card-panel { background: #ffffff; border-radius: 15px; padding: 20px; border: 1px solid #ddd; margin-bottom: 20px; }
+        .card-panel { background: #ffffff; border-radius: 15px; padding: 20px; border: 1px solid #ddd; }
         
-        /* Instructions Styling */
-        .instruction-box { background: #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid var(--secondary); }
-        .instruction-box h4 { margin-bottom: 10px; color: var(--secondary); }
-        .instruction-box ul { padding-left: 20px; }
-
         /* Inputs & Buttons */
         select, input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; outline: none; width: 100%; }
         button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
         
-        /* Table Styling */
+        /* Table Styling with Borders */
         .fee-table-container { margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; background: white; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: #f8f9fa; color: #333; font-size: 0.9rem; }
         
+        /* Specific Column Widths */
         .col-roll { width: 60px; }
         .col-mark { width: 80px; }
         .input-mark { width: 60px; padding: 5px; text-align: center; }
-
-        /* Print Header - Hidden on screen, shown in print */
-        .print-only-header { display: none; text-align: center; margin-bottom: 20px; }
 
         /* Modal */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; }
         .modal-box { background:white; padding:20px; border-radius:15px; width:95%; max-width:450px; }
         
-        @media print { 
-            .no-print { display: none !important; }
-            .print-only-header { display: block !important; }
-            body { background: white; padding: 0; }
-            table { page-break-inside: auto; }
-            tr { page-break-inside: avoid; page-break-after: auto; }
-            thead { display: table-header-group; }
-        }
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
@@ -70,16 +56,6 @@
     <div class="school-header no-print">
         <h2>UCEP Robertsongonj Technical School</h2>
         <p>Student Mark Entry-26</p>
-    </div>
-
-    <div id="instructions" class="card-panel">
-        <h4>ব্যবহারের নিয়মাবলী:</h4>
-        <ul>
-            <li>প্রথমে ড্রপডাউন মেনু থেকে সঠিক <b>ক্লাস</b> সিলেক্ট করুন।</li>
-            <li>এরপর সংশ্লিষ্ট <b>বিষয় (Subject)</b> সিলেক্ট করুন।</li>
-            <li>তথ্য দেখার জন্য <b>'View'</b> বাটনে ক্লিক করুন।</li>
-            <li>নতুন তথ্য এন্ট্রির জন্য <b>'Search'</b> বাটনে ক্লিক করুন।</li>
-        </ul>
     </div>
 
     <div class="card-panel no-print">
@@ -134,7 +110,6 @@
     const searchBtn = document.getElementById('searchBtn');
     const viewBtn = document.getElementById('viewBtn');
     const resultArea = document.getElementById('resultArea');
-    const instructions = document.getElementById('instructions');
 
     async function appsScriptGET(action, params = {}){
       const url = new URL(WEB_APP_URL);
@@ -165,7 +140,6 @@
     });
 
     searchBtn.addEventListener('click', async ()=>{
-      instructions.style.display = 'none'; // Hide instructions on search
       const result = await appsScriptGET('viewStudents', {classKey: classSelect.value, subjectIndex: subjectSelect.value});
       const students = result.students || [];
       if(students.length === 0) return resultArea.innerHTML = '<p style="text-align:center;">No students.</p>';
@@ -204,24 +178,11 @@
     }
 
     viewBtn.addEventListener('click', async ()=>{
-      instructions.style.display = 'none'; // Hide instructions on view
       const res = await appsScriptGET('viewResultsReport', {classKey: classSelect.value, subjectIndex: subjectSelect.value, sheetId: SHEET_ID, gid: ''});
-      
-      // Get display text for header
-      const className = classSelect.options[classSelect.selectedIndex].text;
-      const subName = subjectSelect.options[subjectSelect.selectedIndex].text;
-
-      let html = `
-        <div class="print-only-header">
-            <h2>UCEP Robertsongonj Technical School</h2>
-            <h3 style="font-size:1.1rem; color: #555;">Marksheet - ${subName}</h3>
-            <p style="font-size:0.9rem;">Class - ${className}</p>
-        </div>
-        <table><thead><tr><th class="col-roll">Roll</th><th>Name</th><th>Marks</th><th>Grade</th><th>GPA</th></tr></thead><tbody>`;
-      
+      let html = '<table><thead><tr><th class="col-roll">Roll</th><th>Name</th><th>Marks</th><th>Grade</th><th>GPA</th></tr></thead><tbody>';
       res.students.forEach((s) => html += `<tr><td>${s.roll}</td><td style="text-align:left;">${s.name}</td><td>${s.marks||'-'}</td><td>${s.grade||'-'}</td><td>${s.gpa||'-'}</td></tr>`);
       html += '</tbody></table>';
-      html += `<div style="margin-top:20px; display:flex; gap:10px;" class="no-print"><button onclick="window.print()">🖨️ Print</button><button onclick="location.reload()" style="background:#dc3545;">❌ Clear</button></div>`;
+      html += `<div style="margin-top:20px; display:flex; gap:10px;" class="no-print"><button onclick="window.print()">🖨️ Print</button><button onclick="document.getElementById('resultArea').innerHTML=''" style="background:#dc3545;">❌ Clear</button></div>`;
       resultArea.innerHTML = html;
     });
 
