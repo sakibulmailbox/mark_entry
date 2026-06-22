@@ -37,26 +37,17 @@
         select, input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; outline: none; width: 100%; }
         button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
         
-        /* Table Styling */
-        .fee-table-container { margin-top: 20px; }
+        /* Screen Table Styling */
         table { width: 100%; border-collapse: collapse; background: white; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: #f8f9fa; color: #333; font-size: 0.9rem; }
-        
         .col-roll { width: 60px; }
         .col-mark { width: 80px; }
         .input-mark { width: 60px; padding: 5px; text-align: center; }
 
-        /* Print Header - Hidden on screen, shown in print */
-        .print-only-header { display: none; text-align: center; margin-bottom: 20px; }
-
-        /* Print-only content area (two-column layout) */
-        .print-only-content { display: none; }
-        .print-columns { column-count: 2; column-gap: 30px; }
-        .student-item { display: block; break-inside: avoid; -webkit-column-break-inside: avoid; padding: 6px 10px; border-bottom: 1px solid #ddd; margin-bottom:6px; }
-        .student-row { display:flex; justify-content:space-between; gap:10px; align-items:center; font-size:13px; }
-        .student-left { text-align:left; flex:1; }
-        .student-right { text-align:right; width:120px; }
+        /* Print-only header & table */
+        .print-only-header { display: none; text-align: center; margin-bottom: 10px; }
+        .print-table { display: none; margin-top: 10px; }
 
         /* Modal */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; }
@@ -65,18 +56,19 @@
         @media print { 
             .no-print { display: none !important; }
             .print-only-header { display: block !important; }
-            .print-only-content { display: block !important; }
+            .print-table { display: table !important; }
             .screen-only { display: none !important; }
 
             body { background: white; padding: 20px; color: #000; }
-            .print-only-header h2 { margin-bottom:8px; }
-            .print-only-header p { margin:2px 0; font-size:13px; color:#333; }
-            .student-item { font-size:12px; border:none; padding:4px 0; }
-            /* Keep items from breaking across columns/pages */
-            .student-item { break-inside: avoid; }
-            table { page-break-inside: auto; }
+            /* Ensure table borders are dark and visible in print */
+            .print-table, .print-table th, .print-table td { border: 1px solid #000; }
+            .print-table { border-collapse: collapse; width: 100%; }
+            .print-table th, .print-table td { padding: 8px; font-size: 12px; }
+            .print-table thead { display: table-header-group; } /* repeat header on each printed page */
+            .print-table tfoot { display: table-footer-group; }
+
+            /* Keep rows from breaking inside a page */
             tr { page-break-inside: avoid; page-break-after: auto; }
-            thead { display: table-header-group; }
         }
     </style>
 </head>
@@ -227,28 +219,23 @@
       const className = classSelect.options[classSelect.selectedIndex].text;
       const subName = subjectSelect.options[subjectSelect.selectedIndex].text;
 
-      // Build screen table view (visible on screen) and print view (visible on print)
+      // Screen view (table with actions)
       let screenHtml = `<table class="screen-only"><thead><tr><th class="col-roll">Roll</th><th>Name</th><th>Marks</th><th>Grade</th><th>GPA</th></tr></thead><tbody>`;
       res.students.forEach((s) => screenHtml += `<tr><td>${s.roll}</td><td style="text-align:left;">${s.name}</td><td>${s.marks||'-'}</td><td>${s.grade||'-'}</td><td>${s.gpa||'-'}</td></tr>`);
       screenHtml += '</tbody></table>';
       screenHtml += `<div style="margin-top:20px; display:flex; gap:10px;" class="no-print"><button onclick="window.print()">🖨️ Print</button><button onclick="location.reload()" style="background:#dc3545;">❌ Clear</button></div>`;
 
-      // Build print-only header (centered) and two-column content
+      // Print view: header + 5-column bordered table (header repeated on each printed page)
       let printHtml = `<div class="print-only-header">`;
       printHtml += `<h2>UCEP Robertsongonj Technical School</h2>`;
       printHtml += `<p>Class: <strong>${className}</strong> &nbsp; | &nbsp; Subject: <strong>${subName}</strong></p>`;
       printHtml += `</div>`;
 
-      printHtml += `<div class="print-only-content">`;
-      printHtml += `<div class="print-columns">`;
+      printHtml += `<table class="print-table"><thead><tr><th>Roll</th><th>Name</th><th>Marks</th><th>Grade</th><th>GPA</th></tr></thead><tbody>`;
       res.students.forEach((s) => {
-        const marks = s.marks || '-';
-        const grade = s.grade || '-';
-        const gpa = s.gpa || '-';
-        printHtml += `<div class="student-item"><div class="student-row"><div class="student-left">${s.roll} — ${s.name}</div><div class="student-right">${marks} / ${grade} / ${gpa}</div></div></div>`;
+        printHtml += `<tr><td style="text-align:center">${s.roll}</td><td style="text-align:left; padding-left:8px">${s.name}</td><td style="text-align:center">${s.marks||'-'}</td><td style="text-align:center">${s.grade||'-'}</td><td style="text-align:center">${s.gpa||'-'}</td></tr>`;
       });
-      printHtml += `</div>`; // print-columns
-      printHtml += `</div>`; // print-only-content
+      printHtml += `</tbody></table>`;
 
       resultArea.innerHTML = printHtml + screenHtml;
     });
