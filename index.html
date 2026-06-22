@@ -9,7 +9,7 @@
         :root {
             --primary: #198754;
             --secondary: #0d6efd;
-            --bg-color: #fdfcf0; /* Screenshot background color */
+            --bg-color: #fdfcf0;
             --text-color: #333;
         }
 
@@ -26,28 +26,58 @@
         .school-header h2 { color: var(--secondary); font-size: 1.5rem; }
         .school-header p { color: #666; font-size: 0.9rem; }
 
-        .card-panel { background: #ffffff; border-radius: 15px; padding: 20px; border: 1px solid #ddd; }
+        .card-panel { background: #ffffff; border-radius: 15px; padding: 20px; border: 1px solid #ddd; margin-bottom: 20px; }
         
+        /* Instructions Styling */
+        .instruction-box { background: #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid var(--secondary); }
+        .instruction-box h4 { margin-bottom: 10px; color: var(--secondary); }
+        .instruction-box ul { padding-left: 20px; }
+
         /* Inputs & Buttons */
         select, input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; outline: none; width: 100%; }
         button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
         
-        /* Table Styling with Borders */
+        /* Table Styling */
         .fee-table-container { margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; background: white; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: #f8f9fa; color: #333; font-size: 0.9rem; }
         
-        /* Specific Column Widths */
         .col-roll { width: 60px; }
         .col-mark { width: 80px; }
         .input-mark { width: 60px; padding: 5px; text-align: center; }
+
+        /* Print Header - Hidden on screen, shown in print */
+        .print-only-header { display: none; text-align: center; margin-bottom: 20px; }
+
+        /* Print-only content area (two-column layout) */
+        .print-only-content { display: none; }
+        .print-columns { column-count: 2; column-gap: 30px; }
+        .student-item { display: block; break-inside: avoid; -webkit-column-break-inside: avoid; padding: 6px 10px; border-bottom: 1px solid #ddd; margin-bottom:6px; }
+        .student-row { display:flex; justify-content:space-between; gap:10px; align-items:center; font-size:13px; }
+        .student-left { text-align:left; flex:1; }
+        .student-right { text-align:right; width:120px; }
 
         /* Modal */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; }
         .modal-box { background:white; padding:20px; border-radius:15px; width:95%; max-width:450px; }
         
-        @media print { .no-print { display: none !important; } }
+        @media print { 
+            .no-print { display: none !important; }
+            .print-only-header { display: block !important; }
+            .print-only-content { display: block !important; }
+            .screen-only { display: none !important; }
+
+            body { background: white; padding: 20px; color: #000; }
+            .print-only-header h2 { margin-bottom:8px; }
+            .print-only-header p { margin:2px 0; font-size:13px; color:#333; }
+            .student-item { font-size:12px; border:none; padding:4px 0; }
+            /* Keep items from breaking across columns/pages */
+            .student-item { break-inside: avoid; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            thead { display: table-header-group; }
+        }
     </style>
 </head>
 <body>
@@ -56,6 +86,16 @@
     <div class="school-header no-print">
         <h2>UCEP Robertsongonj Technical School</h2>
         <p>Student Mark Entry-26</p>
+    </div>
+
+    <div id="instructions" class="card-panel">
+        <h4>ব্যবহারের নিয়মাবলী:</h4>
+        <ul>
+            <li>প্রথমে ড্রপডাউন মেনু থেকে সঠিক <b>ক্লাস</b> সিলেক্ট করুন।</li>
+            <li>এরপর সংশ্লিষ্ট <b>বিষয় (Subject)</b> সিলেক্ট করুন।</li>
+            <li>তথ্য দেখার জন্য <b>'View'</b> বাটনে ক্লিক করুন।</li>
+            <li>নতুন তথ্য এন্ট্রির জন্য <b>'Search'</b> বাটনে ক্লিক করুন।</li>
+        </ul>
     </div>
 
     <div class="card-panel no-print">
@@ -110,6 +150,7 @@
     const searchBtn = document.getElementById('searchBtn');
     const viewBtn = document.getElementById('viewBtn');
     const resultArea = document.getElementById('resultArea');
+    const instructions = document.getElementById('instructions');
 
     async function appsScriptGET(action, params = {}){
       const url = new URL(WEB_APP_URL);
@@ -140,11 +181,12 @@
     });
 
     searchBtn.addEventListener('click', async ()=>{
+      instructions.style.display = 'none'; // Hide instructions on search
       const result = await appsScriptGET('viewStudents', {classKey: classSelect.value, subjectIndex: subjectSelect.value});
       const students = result.students || [];
       if(students.length === 0) return resultArea.innerHTML = '<p style="text-align:center;">No students.</p>';
       
-      resultArea.innerHTML = `<table><thead><tr><th class="col-roll">Roll</th><th>Name</th><th class="col-mark">Mark</th></tr></thead><tbody id="markTbody"></tbody></table>`;
+      resultArea.innerHTML = `<table class="screen-only"><thead><tr><th class="col-roll">Roll</th><th>Name</th><th class="col-mark">Mark</th></tr></thead><tbody id="markTbody"></tbody></table>`;
       const tbody = document.getElementById('markTbody');
       students.forEach((stud, idx) => {
         tbody.innerHTML += `<tr><td>${stud.roll}</td><td style="text-align:left;">${stud.name}</td><td><input class="mark input-mark" type="number" value="${stud.mark || ''}" data-student-index="${idx}"></td></tr>`;
@@ -178,12 +220,37 @@
     }
 
     viewBtn.addEventListener('click', async ()=>{
+      instructions.style.display = 'none'; // Hide instructions on view
       const res = await appsScriptGET('viewResultsReport', {classKey: classSelect.value, subjectIndex: subjectSelect.value, sheetId: SHEET_ID, gid: ''});
-      let html = '<table><thead><tr><th class="col-roll">Roll</th><th>Name</th><th>Marks</th><th>Grade</th><th>GPA</th></tr></thead><tbody>';
-      res.students.forEach((s) => html += `<tr><td>${s.roll}</td><td style="text-align:left;">${s.name}</td><td>${s.marks||'-'}</td><td>${s.grade||'-'}</td><td>${s.gpa||'-'}</td></tr>`);
-      html += '</tbody></table>';
-      html += `<div style="margin-top:20px; display:flex; gap:10px;" class="no-print"><button onclick="window.print()">🖨️ Print</button><button onclick="document.getElementById('resultArea').innerHTML=''" style="background:#dc3545;">❌ Clear</button></div>`;
-      resultArea.innerHTML = html;
+      
+      // Get display text for header
+      const className = classSelect.options[classSelect.selectedIndex].text;
+      const subName = subjectSelect.options[subjectSelect.selectedIndex].text;
+
+      // Build screen table view (visible on screen) and print view (visible on print)
+      let screenHtml = `<table class="screen-only"><thead><tr><th class="col-roll">Roll</th><th>Name</th><th>Marks</th><th>Grade</th><th>GPA</th></tr></thead><tbody>`;
+      res.students.forEach((s) => screenHtml += `<tr><td>${s.roll}</td><td style="text-align:left;">${s.name}</td><td>${s.marks||'-'}</td><td>${s.grade||'-'}</td><td>${s.gpa||'-'}</td></tr>`);
+      screenHtml += '</tbody></table>';
+      screenHtml += `<div style="margin-top:20px; display:flex; gap:10px;" class="no-print"><button onclick="window.print()">🖨️ Print</button><button onclick="location.reload()" style="background:#dc3545;">❌ Clear</button></div>`;
+
+      // Build print-only header (centered) and two-column content
+      let printHtml = `<div class="print-only-header">`;
+      printHtml += `<h2>UCEP Robertsongonj Technical School</h2>`;
+      printHtml += `<p>Class: <strong>${className}</strong> &nbsp; | &nbsp; Subject: <strong>${subName}</strong></p>`;
+      printHtml += `</div>`;
+
+      printHtml += `<div class="print-only-content">`;
+      printHtml += `<div class="print-columns">`;
+      res.students.forEach((s) => {
+        const marks = s.marks || '-';
+        const grade = s.grade || '-';
+        const gpa = s.gpa || '-';
+        printHtml += `<div class="student-item"><div class="student-row"><div class="student-left">${s.roll} — ${s.name}</div><div class="student-right">${marks} / ${grade} / ${gpa}</div></div></div>`;
+      });
+      printHtml += `</div>`; // print-columns
+      printHtml += `</div>`; // print-only-content
+
+      resultArea.innerHTML = printHtml + screenHtml;
     });
 
     document.getElementById('noBtn').onclick = () => document.getElementById('confirmModal').style.display = 'none';
